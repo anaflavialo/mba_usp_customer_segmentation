@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from utils import rfmv, elbow_method, kmeans
+from utils import rfmv, elbow_method, kmeans, plot_segmentation
 
 st.title('Customer Segmentation')
 
@@ -33,3 +33,6 @@ if(uploaded_file):
 
     st.write("Quantidade de clientes por segmentação")
     st.write(df_rfmv.groupby("segmentation").agg({"customer_unique_id": "count"}).rename({"customer_unique_id": "count"}, axis=1).head())
+
+    fig = plot_segmentation.plot_segmentation(df_rfmv, "recency", "frequency", "monetary")
+    st.plotly_chart(fig, use_container_width=True)
