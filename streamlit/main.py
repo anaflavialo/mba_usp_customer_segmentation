@@ -47,8 +47,6 @@ if(uploaded_file):
         clusters = kmeans.apply_kmeans(df_rfmv_norm, n_clusters)
         df_rfmv["segmentation"] = clusters 
 
-    st.write(df_rfmv.head())
-
     st.write("Quantidade de clientes por segmentação")
     st.write(df_rfmv.groupby("segmentation").agg({"customer_unique_id": "count"}).rename({"customer_unique_id": "count"}, axis=1).head())
 
