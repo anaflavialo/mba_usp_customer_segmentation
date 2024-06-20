@@ -48,16 +48,17 @@ def get_rfmv(df):
 
     return df_rfmv
 
-def get_rfmv_normalized(df):
+def get_rfmv_std(df):
     df_rfmv = get_rfmv(df)
+    df_rfmv_std = df_rfmv.copy()
 
-    cols_to_normalize = ["recency", "frequency", "monetary", "product_variety", "category_variety"]
+    cols_to_std = ["recency", "frequency", "monetary", "product_variety", "category_variety"]
 
-    for col in cols_to_normalize:
-        x_max = df_rfmv[col].max()
-        x_min = df_rfmv[col].min()
+    for col in cols_to_std:
+        x_mean = df_rfmv[col].mean()
+        x_std = df_rfmv[col].std()
         
-        df_rfmv[col] = df_rfmv[col].apply(lambda x: (x - x_min)/(x_max - x_min))
+        df_rfmv_std[col] = df_rfmv[col].apply(lambda x: (x - x_mean)/(x_std))
     
-    return df_rfmv
+    return df_rfmv_std
 
