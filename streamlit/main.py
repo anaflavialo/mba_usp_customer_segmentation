@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from utils import rfmv, elbow_method, kmeans, plot_segmentation, transformation_functions
-from components import sidebar
 
 st.set_page_config(
     page_title='Segmentação de Clientes', 
@@ -103,9 +102,6 @@ if(uploaded_file):
             clusters = kmeans.apply_kmeans(df_rfmv_norm, n_clusters)
             df_rfmv["segmentation"] = clusters 
 
-        st.write("Quantidade de clientes por segmentação")
-        st.write(df_rfmv.groupby("segmentation").agg({"customer_unique_id": "count"}).rename({"customer_unique_id": "count"}, axis=1).head())
-
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -120,5 +116,5 @@ if(uploaded_file):
             cols_to_filter = cols_to_filter - set([sel2])
             sel3 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
 
-        #fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
-        #st.plotly_chart(fig, use_container_width=True)
+        fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
+        st.plotly_chart(fig, use_container_width=True)
