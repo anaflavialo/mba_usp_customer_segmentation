@@ -39,14 +39,19 @@ if(uploaded_file):
 
         col = st.columns(3, gap="medium")
         total_sales = df["monetary"].sum()
+        sales_qty = len(df.index)
         product_qty = len(df["product_id"].unique())
         customer_qty = len(df["customer_unique_id"].unique())
         category_qty = len(df["product_category_name"].unique())
+        avg_ticket = total_sales / sales_qty
 
         with col[0]:
             st.metric("Valor total da venda", transformation_functions.get_formatted_value("R$ {:,.2f}", total_sales))
-            st.metric("Quantidade de itens vendidos", transformation_functions.get_formatted_value("{:,}", product_qty))
+            st.metric("Ticket médio", transformation_functions.get_formatted_value("R$ {:,.2f}", avg_ticket))
+            
             st.metric("Quantidade de clientes", transformation_functions.get_formatted_value("{:,}",customer_qty))
+
+            st.metric("Quantidade de itens vendidos", transformation_functions.get_formatted_value("{:,}", product_qty))
             st.metric("Quantidade de categorias vendidas", transformation_functions.get_formatted_value("{:,}",category_qty))
 
         with col[1]:
@@ -123,6 +128,24 @@ if(uploaded_file):
 
             fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
             st.plotly_chart(fig, use_container_width=True)
+
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                df_rfmv.columns = ["id_cliente","recência","frequência","valor monetário","variedade de categorias","variedade de produtos","segmentação"]
+                st.dataframe(df_rfmv)
+
+            with col2:
+                cluster_qty = df_rfmv.groupby("segmentação").agg({"id_cliente": "count"}).rename({"id_cliente": "contagem"}, axis=1) 
+                st.dataframe(cluster_qty)   
+
+                st.download_button(
+                    label="Salvar como CSV",
+                    data=df_rfmv.to_csv(index=False).encode('utf-8'),
+                    file_name="segmentacao_de_clientes.csv",
+                    mime="text/csv",
+                )
+
 
         else:
             st.error("Insira dados de pelo menos 10 clientes para iniciar a segmentação.")
