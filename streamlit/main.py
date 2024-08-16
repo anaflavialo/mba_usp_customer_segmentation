@@ -38,11 +38,16 @@ if(uploaded_file):
                 df = df[(df.order_purchase >= date_filter[0]) & (df.order_purchase <= date_filter[1])]
 
         col = st.columns(3, gap="medium")
+        total_sales = df["monetary"].sum()
+        product_qty = len(df["product_id"].unique())
+        customer_qty = len(df["customer_unique_id"].unique())
+        category_qty = len(df["product_category_name"].unique())
+
         with col[0]:
-            st.metric("Valor total da venda", transformation_functions.get_formatted_value("R$ {:,.2f}", df["monetary"].sum()))
-            st.metric("Quantidade de itens vendidos", transformation_functions.get_formatted_value("{:,}", len(df["product_id"].unique())))
-            st.metric("Quantidade de clientes", transformation_functions.get_formatted_value("{:,}",len(df["customer_unique_id"].unique())))
-            st.metric("Quantidade de categorias vendidas", transformation_functions.get_formatted_value("{:,}",len(df["product_category_name"].unique())))
+            st.metric("Valor total da venda", transformation_functions.get_formatted_value("R$ {:,.2f}", total_sales))
+            st.metric("Quantidade de itens vendidos", transformation_functions.get_formatted_value("{:,}", product_qty))
+            st.metric("Quantidade de clientes", transformation_functions.get_formatted_value("{:,}",customer_qty))
+            st.metric("Quantidade de categorias vendidas", transformation_functions.get_formatted_value("{:,}",category_qty))
 
         with col[1]:
             st.markdown('#### Top Categorias por Valor')
@@ -88,33 +93,36 @@ if(uploaded_file):
                 }
             )
 
-        
-        with st.status("Criando segmentação", expanded=True):
-            st.write("Calculando as métricas por cliente...")
-            df_rfmv = rfmv.get_rfmv(df)
-            df_rfmv_norm = rfmv.get_rfmv_std(df)
+        if(customer_qty >= 10):
+            with st.status("Criando segmentação", expanded=True):
+                st.write("Calculando as métricas por cliente...")
+                df_rfmv = rfmv.get_rfmv(df)
+                df_rfmv_norm = rfmv.get_rfmv_std(df)
 
-            st.write("Calculando o número ótimo de segmentações...")
-            inertias = elbow_method.get_inertias(df_rfmv_norm)
-            n_clusters = elbow_method.get_optimal_number_of_clusters(inertias)
+                st.write("Calculando o número ótimo de segmentações...")
+                inertias = elbow_method.get_inertias(df_rfmv_norm)
+                n_clusters = elbow_method.get_optimal_number_of_clusters(inertias)
 
-            st.write("Segmentando seus clientes...")
-            clusters = kmeans.apply_kmeans(df_rfmv_norm, n_clusters)
-            df_rfmv["segmentation"] = clusters 
+                st.write("Segmentando seus clientes...")
+                clusters = kmeans.apply_kmeans(df_rfmv_norm, n_clusters)
+                df_rfmv["segmentation"] = clusters 
 
-        col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
 
-        with col1:
-            cols_to_filter = set(["recency", "frequency", "monetary", "product_variety", "category_variety"])
-            sel1 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
+            with col1:
+                cols_to_filter = set(["recency", "frequency", "monetary", "product_variety", "category_variety"])
+                sel1 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
 
-        with col2:
-            cols_to_filter = cols_to_filter - set([sel1])
-            sel2 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
-        
-        with col3:
-            cols_to_filter = cols_to_filter - set([sel2])
-            sel3 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
+            with col2:
+                cols_to_filter = cols_to_filter - set([sel1])
+                sel2 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
+            
+            with col3:
+                cols_to_filter = cols_to_filter - set([sel2])
+                sel3 = st.selectbox(label="Escolha uma coluna", options=cols_to_filter)
 
-        fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
-        st.plotly_chart(fig, use_container_width=True)
+            fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
+            st.plotly_chart(fig, use_container_width=True)
+
+        else:
+            st.error("Insira dados de pelo menos 10 clientes para iniciar a segmentação.")
