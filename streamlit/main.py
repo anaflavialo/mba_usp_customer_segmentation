@@ -11,6 +11,15 @@ st.set_page_config(
 
 st.title('Segmentação de Clientes')
 
+df_model = pd.read_csv("./data/model.csv")
+
+st.download_button(
+    label="Baixar modelo",
+    data=df_model.to_csv(index=False).encode('utf-8'),
+    file_name="segmentacao_de_clientes.csv",
+    mime="text/csv",
+)
+
 uploaded_file = st.file_uploader(
     "Informações de compras dos clientes", 
     type=["csv", "xlsx"], 
