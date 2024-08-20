@@ -120,7 +120,10 @@ if(uploaded_file):
                 st.write("Segmentando seus clientes...")
                 clusters = kmeans.apply_kmeans(df_rfmv_norm, n_clusters)
                 df_rfmv["segmentation"] = clusters 
+            
 
+            st.title("Visualização das segmentações")
+            st.write(f"Seus clientes foram divididos em {str(n_clusters)} segmentações.")
             col1, col2, col3 = st.columns(3)
 
             with col1:
