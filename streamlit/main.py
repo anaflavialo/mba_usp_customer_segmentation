@@ -141,22 +141,41 @@ if(uploaded_file):
             fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
             st.plotly_chart(fig, use_container_width=True)
 
-            col1, col2 = st.columns([3, 1])
+            st.divider()
+            st.title("Categorias mais compradas por cada segmentação")
+            df_final = rfmv.get_customer_segmentation(df, df_rfmv)
+            fig = plot_segmentation.plot_top_category_by_segmentation(df_final, x="segmentation", y="count", color="product_category_name")
+            st.plotly_chart(fig, use_container_width=True)
 
+            st.divider()
+            st.title("Estatísticas descritivas de cada segmentação")
+            df_rfmv.columns = ["id_cliente","recência","frequência","valor monetário","variedade de categorias","variedade de produtos","segmentação"]
+            
+            cols_to_filter = set(["recência","frequência","valor monetário","variedade de categorias","variedade de produtos"])
+            describe_sel = st.selectbox(label="Escolha uma coluna para ver as estatísticas", options=cols_to_filter)
+            
+            col1, col2 = st.columns(2)
             with col1:
-                df_rfmv.columns = ["id_cliente","recência","frequência","valor monetário","variedade de categorias","variedade de produtos","segmentação"]
-                st.dataframe(df_rfmv)
-
-            with col2:
-                cluster_qty = df_rfmv.groupby("segmentação").agg({"id_cliente": "count"}).rename({"id_cliente": "contagem"}, axis=1) 
-                st.dataframe(cluster_qty)   
+                st.text("")
+                st.markdown("#")
+                st.text("")
+                df_to_describe = transformation_functions.get_df_to_describe(df_rfmv, describe_sel)
+                st.dataframe(df_to_describe)
 
                 st.download_button(
-                    label="Salvar como CSV",
+                    label="Salvar as informações de RFMV como CSV",
                     data=df_rfmv.to_csv(index=False).encode('utf-8'),
                     file_name="segmentacao_de_clientes.csv",
                     mime="text/csv",
                 )
+
+            with col2:
+                fig = plot_segmentation.plot_boxplot(df_rfmv, describe_sel)
+                st.plotly_chart(fig, use_container_width=True)
+
+            
+
+                
 
 
         else:
