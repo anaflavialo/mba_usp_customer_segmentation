@@ -62,3 +62,17 @@ def get_rfmv_std(df):
     
     return df_rfmv_std
 
+def get_customer_segmentation(df, df_rfmv):
+    df_rfmv = df_rfmv[["customer_unique_id","segmentation"]]
+
+    df_final = (
+        df 
+        .join(
+            df_rfmv.set_index("customer_unique_id"),
+            on="customer_unique_id",
+            how="inner"
+        )
+    )
+
+    return df_final
+
