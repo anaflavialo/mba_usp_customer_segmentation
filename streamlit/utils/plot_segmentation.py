@@ -10,3 +10,19 @@ def plot_segmentation(df_rfmv, x, y, z):
     )
 
     return fig
+
+def plot_top_category_by_segmentation(df, x, y, color):
+    df_to_plot = df.groupby(["segmentation","product_category_name"]).size().reset_index(name="count").sort_values(by=["segmentation","count"], ascending=[True, False])
+    
+    fig = px.bar(df_to_plot, x=x, y=y, color=color)
+    fig.update_layout(
+        xaxis_title=dict(text='Segmentação', font=dict(size=16, color='#FFFFFF')),
+        yaxis_title=dict(text='Contagem', font=dict(size=16, color='#FFFFFF')),
+        legend_title="Categorias"
+    )
+    return fig
+
+def plot_boxplot(df, col):
+    fig = px.box(df, x="segmentação", y=col)
+    return fig
+

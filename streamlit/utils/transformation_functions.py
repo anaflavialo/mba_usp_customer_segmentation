@@ -40,3 +40,6 @@ def get_grouped_by_amount(df):
     df_grouped["count"] = df_grouped["count"].apply(lambda x: "{:,}".format(x).replace(",", "_").replace(".", ",").replace("_", "."))
 
     return df_grouped
+
+def get_df_to_describe(df, col):
+    return df.groupby('segmentação')[col].describe()
