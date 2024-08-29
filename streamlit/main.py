@@ -141,9 +141,16 @@ if(uploaded_file):
             fig = plot_segmentation.plot_segmentation(df_rfmv, sel1, sel2, sel3)
             st.plotly_chart(fig, use_container_width=True)
 
-            st.divider()
-            st.title("Categorias mais compradas por cada segmentação")
             df_final = rfmv.get_customer_segmentation(df, df_rfmv)
+
+            st.divider()
+            st.title("Categorias mais compradas por cada segmentação (valor monetário)")
+
+            fig = plot_segmentation.plot_top_profitable_category_by_segmentation(df_final, x="segmentation", y="monetary", color="product_category_name")
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.divider()
+            st.title("Categorias mais compradas por cada segmentação (quantidade de vendas)")
             fig = plot_segmentation.plot_top_category_by_segmentation(df_final, x="segmentation", y="count", color="product_category_name")
             st.plotly_chart(fig, use_container_width=True)
 
