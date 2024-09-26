@@ -17,17 +17,12 @@ def get_monetary(df):
     df_monetary = df.groupby("customer_unique_id").agg({"monetary": "sum"}).reset_index()
     return df_monetary
 
-def get_variety(df):
-    df_variety = df.groupby("customer_unique_id").agg({"product_id": "nunique", "product_category_name": "nunique"}).rename({"product_id": "product_variety", "product_category_name": "category_variety"}, axis=1).reset_index()
-    return df_variety
-
-def get_rfmv(df):
+def get_rfm(df):
     df_recency = get_recency(df)
     df_frequency = get_frequency(df)
     df_monetary = get_monetary(df)
-    df_variety = get_variety(df)
 
-    df_rfmv = (
+    df_rfm = (
         df_recency
         .join(
             df_frequency.set_index("customer_unique_id"),
@@ -39,36 +34,29 @@ def get_rfmv(df):
             on="customer_unique_id",
             how="inner"
         )
-        .join(
-            df_variety.set_index("customer_unique_id"),
-            on="customer_unique_id",
-            how="inner"
-        )
     )
 
-    return df_rfmv
+    return df_rfm
 
-def get_rfmv_std(df):
-    df_rfmv = get_rfmv(df)
-    df_rfmv_std = df_rfmv.copy()
-
-    cols_to_std = ["recency", "frequency", "monetary", "product_variety", "category_variety"]
+def get_rfm_std(df, cols_to_std):
+    df_rfm = get_rfm(df)
+    df_rfm_std = df_rfm.copy()
 
     for col in cols_to_std:
-        x_mean = df_rfmv[col].mean()
-        x_std = df_rfmv[col].std()
+        x_mean = df_rfm[col].mean()
+        x_std = df_rfm[col].std()
         
-        df_rfmv_std[col] = df_rfmv[col].apply(lambda x: (x - x_mean)/(x_std))
+        df_rfm_std[col] = df_rfm[col].apply(lambda x: (x - x_mean)/(x_std))
     
-    return df_rfmv_std
+    return df_rfm_std
 
-def get_customer_segmentation(df, df_rfmv):
-    df_rfmv = df_rfmv[["customer_unique_id","segmentation"]]
+def get_customer_segmentation(df, df_rfm):
+    df_rfm = df_rfm[["customer_unique_id","segmentation"]]
 
     df_final = (
         df 
         .join(
-            df_rfmv.set_index("customer_unique_id"),
+            df_rfm.set_index("customer_unique_id"),
             on="customer_unique_id",
             how="inner"
         )
