@@ -1,8 +1,8 @@
 import plotly.express as px
 
-def plot_segmentation(df_rfmv, x, y, z):
+def plot_segmentation(df_rfm, x, y, z):
     fig = px.scatter_3d(
-        df_rfmv, 
+        df_rfm, 
         x=x, 
         y=y, 
         z=z,

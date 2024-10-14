@@ -5,12 +5,12 @@ import matplotlib.pyplot as plt
 min_number_of_clusters = 2
 max_number_of_clusters = 10
 
-def get_inertias(df_rfmv):
+def get_inertias(df_rfm):
     inertias = []
 
     for i in range(min_number_of_clusters, max_number_of_clusters + 1):
         kmeans = KMeans(n_clusters=i, random_state=42, max_iter=500)
-        kmeans.fit(df_rfmv[df_rfmv.columns[1:]])
+        kmeans.fit(df_rfm[df_rfm.columns[1:]])
         inertias.append(kmeans.inertia_)
 
     return inertias
