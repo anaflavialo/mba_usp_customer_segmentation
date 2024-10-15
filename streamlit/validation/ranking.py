@@ -1,9 +1,6 @@
 import pandas as pd
 
 def get_ranking(df):
-    ranking = pd.DataFrame()
-    metrics = ["silhouette_score", "ch_score", "db_score"]
-    
     ranking_1 = df["silhouette_score"].sort_values(ascending=False).reset_index()
     ranking_1["posicao1"] = ranking_1.index + 1
     del ranking_1["index"]
