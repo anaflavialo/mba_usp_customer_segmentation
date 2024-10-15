@@ -14,6 +14,6 @@ def apply_bisecting_kmeans(df_rfm, n_clusters, all_columns):
         verbose=0
     )
     df_rfm = df_rfm[all_columns]
-    clusters = bsc.fit_predict(df_rfm)
+    clusters = bsc.fit(df_rfm)
     
     return clusters

@@ -1,6 +1,6 @@
 from sklearn.cluster import AgglomerativeClustering
 
-def apply_bisecting_kmeans(df_rfm, n_clusters, all_columns):
+def apply_agglomerative_clustering(df_rfm, n_clusters, all_columns):
     agg = AgglomerativeClustering(
         n_clusters=n_clusters,
         affinity='deprecated',
@@ -13,6 +13,6 @@ def apply_bisecting_kmeans(df_rfm, n_clusters, all_columns):
         metric=None,
     )
     df_rfm = df_rfm[all_columns]
-    clusters = agg.fit_predict(df_rfm)
+    clusters = agg.fit(df_rfm)
     
     return clusters

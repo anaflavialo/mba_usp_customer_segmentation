@@ -38,20 +38,23 @@ def get_rfm(df):
 
     return df_rfm
 
-def get_rfm_std(df, cols_to_std):
-    df_rfm = get_rfm(df)
+def get_rfm_std(df_rfm):
     df_rfm_std = df_rfm.copy()
 
+    df_rfm_std["recency"] = df_rfm_std["recency"].apply(lambda x: 1 if x == 0 else 1/x)
+
+    cols_to_std = df_rfm_std.columns[1:]
+
     for col in cols_to_std:
-        x_mean = df_rfm[col].mean()
-        x_std = df_rfm[col].std()
+        x_mean = df_rfm_std[col].mean()
+        x_std = df_rfm_std[col].std()
         
-        df_rfm_std[col] = df_rfm[col].apply(lambda x: (x - x_mean)/(x_std))
+        df_rfm_std[col] = df_rfm_std[col].apply(lambda x: (x - x_mean)/(x_std))
     
     return df_rfm_std
 
 def get_customer_segmentation(df, df_rfm):
-    df_rfm = df_rfm[["customer_unique_id","segmentation"]]
+    df_rfm = df_rfm[["customer_unique_id","cluster"]]
 
     df_final = (
         df 

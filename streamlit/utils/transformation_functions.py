@@ -41,5 +41,5 @@ def get_grouped_by_amount(df):
 
     return df_grouped
 
-def get_df_to_describe(df, col):
-    return df.groupby('segmentação')[col].describe()
+def get_df_to_describe(df):
+    return df.groupby('segmentação').describe()
