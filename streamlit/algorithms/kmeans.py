@@ -14,6 +14,6 @@ def apply_kmeans(df_rfm, n_clusters, all_columns):
         verbose=0
     )
     df_rfm = df_rfm[all_columns]
-    clusters = kmeans.fit_predict(df_rfm)
+    clusters = kmeans.fit(df_rfm)
     
     return clusters
