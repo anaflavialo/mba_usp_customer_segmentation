@@ -14,7 +14,10 @@ st.set_page_config(
 
 st.title('Segmentação de Clientes')
 
-df_model = pd.read_csv("data/model.csv")
+try:
+    df_model = pd.read_csv("data/model.csv")
+except:
+    df_model = pd.read_csv(r"https://raw.githubusercontent.com/anaflavialo/mba_usp_customer_segmentation/refs/heads/main/streamlit/data/model.csv")
 
 st.download_button(
     label="Baixar modelo",
