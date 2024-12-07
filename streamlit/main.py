@@ -14,7 +14,7 @@ st.set_page_config(
 
 st.title('Segmentação de Clientes')
 
-df_model = pd.read_csv("./data/model.csv")
+df_model = pd.read_csv("data/model.csv")
 
 st.download_button(
     label="Baixar modelo",
