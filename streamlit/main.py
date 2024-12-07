@@ -51,6 +51,8 @@ if(uploaded_file):
             date_filter = st.date_input("Selecione uma data para visualizar os dados", (min_date,max_date), min_value=min_date, max_value=max_date)
             if(len(date_filter) == 2):
                 df = df[(df.order_purchase >= date_filter[0]) & (df.order_purchase <= date_filter[1])]
+                st.session_state.first_exec = True 
+                st.session_state.calc_n_clusters = True
 
         col = st.columns(3, gap="medium")
         total_sales = df["monetary"].sum()
@@ -113,55 +115,89 @@ if(uploaded_file):
                 }
             )
 
+        
+
         if(customer_qty >= 10):
-            with st.status("Criando segmentação", expanded=True):
-                st.write("Calculando as métricas por cliente...")
-                df_rfm = rfm.get_rfm(df)
-                df_rfm_std = rfm.get_rfm_std(df_rfm)
+            if 'first_exec' not in st.session_state:
+                st.session_state['first_exec'] = True
+                st.session_state["calc_n_clusters"] = True
 
-                all_columns = df_rfm_std.columns[1:]
+            first_exec = st.session_state.first_exec
 
-                
-                st.write("Calculando o número ótimo de segmentações...")
-                if(customer_qty >= 25000):
-                    inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
-                    n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias)
+            if(first_exec):
+                with st.status("Criando segmentação", expanded=True):
+                    st.write("Calculando as métricas por cliente...")
+                    df_rfm = rfm.get_rfm(df)
+                    df_rfm_std = rfm.get_rfm_std(df_rfm)
+
+                    all_columns = df_rfm_std.columns[1:]
+
+                    
+                    st.write("Calculando o número ótimo de segmentações...")
+                    if(st.session_state.calc_n_clusters):
+                        if(customer_qty >= 25000):
+                            inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
+                            n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias)
+                            alg = "kmeans"
+                        
+                        else:
+                            algorithms = ["kmeans", "agg", "bisect_kmeans"]
+                            posicoes_final = pd.DataFrame()
+
+                            for alg in algorithms:
+                                scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
+                                ranking_alg = ranking.get_ranking(scores_alg)
+                                n_scores_alg = ranking.get_scores_from_n(ranking_alg)
+                                n_scores_alg["alg"] = alg
+
+                                posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
+
+                            ranking_final = ranking.get_ranking(posicoes_final)
+                            n_clusters = ranking.get_best_n(ranking_final)
+                            alg = ranking.get_best_alg(ranking_final)
+
 
                     st.write("Segmentando seus clientes...")
-                    labels = kmeans.apply_kmeans(df_rfm_std, n_clusters, all_columns).labels_
-                    df_rfm["cluster"] = labels 
-                
-                else:
-                    algorithms = ["kmeans", "agg", "bisect_kmeans"]
-                    posicoes_final = pd.DataFrame()
 
-                    for alg in algorithms:
-                        scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
-                        ranking_alg = ranking.get_ranking(scores_alg)
-                        n_scores_alg = ranking.get_scores_from_n(ranking_alg)
-                        n_scores_alg["alg"] = alg
-
-                        posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
-
-                    ranking_final = ranking.get_ranking(posicoes_final)
-                    n_clusters = ranking.get_best_n(ranking_final)
-                    alg = ranking.get_best_alg(ranking_final)
-
-
-                    st.write("Segmentando seus clientes...")
-                    if(alg == "kmeans"): 
-                        labels = kmeans.apply_kmeans(df_rfm, n_clusters, all_columns).labels_
-                    elif(alg == "agg"): 
-                        labels = agglomerative_clustering.apply_agglomerative_clustering(df_rfm, n_clusters, all_columns).labels_
-                    else: 
-                        labels = bisecting_kmeans.apply_bisecting_kmeans(df_rfm, n_clusters, all_columns).labels_
-
-                    df_rfm["cluster"] = labels 
+                    st.session_state["n_clusters"] = n_clusters
+                    st.session_state["first_exec"] = False
+                    st.session_state["df_rfm"] = df_rfm
+                    st.session_state["alg"] = alg
+                    st.session_state["df_rfm_std"] = df_rfm_std
+                    st.session_state["all_columns"] = all_columns
 
             
 
             st.title("Visualização das segmentações")
+            n_clusters = st.session_state.n_clusters
+            alg = st.session_state.alg
+            df_rfm = st.session_state.df_rfm
+            df_rfm_std = st.session_state.df_rfm_std
+            all_columns = st.session_state.all_columns
+
+            col1, _ = st.columns(2)
+            with col1:
+                current_n_clusters = st.number_input(label="Alterar número de segmentações", value=n_clusters, min_value=2, max_value=10, step=1)
+                st.session_state.n_clusters = current_n_clusters
+                n_clusters = current_n_clusters
+                st.session_state.calc_n_clusters = False
+
+
             st.write(f"Seus clientes foram divididos em {str(n_clusters)} segmentações.")
+
+            if(customer_qty >= 25000):
+                labels = kmeans.apply_kmeans(df_rfm_std, current_n_clusters, all_columns).labels_
+                df_rfm["cluster"] = labels 
+
+            else:
+                if(alg == "kmeans"): 
+                    labels = kmeans.apply_kmeans(df_rfm, current_n_clusters, all_columns).labels_
+                elif(alg == "agg"): 
+                    labels = agglomerative_clustering.apply_agglomerative_clustering(df_rfm, current_n_clusters, all_columns).labels_
+                else: 
+                    labels = bisecting_kmeans.apply_bisecting_kmeans(df_rfm, current_n_clusters, all_columns).labels_
+
+                df_rfm["cluster"] = labels 
 
             df_to_plot = df_rfm.rename({"recency": "R", "frequency": "F", "monetary": "M"}, axis=1)
             
@@ -191,12 +227,13 @@ if(uploaded_file):
 
             st.divider()
             st.title("Estatísticas descritivas de cada segmentação")
-            df_rfm.columns = ["id_cliente","recência","frequência","valor monetário","segmentação"]
+            df_rfm_to_save = df_rfm.copy()
+            df_rfm_to_save.columns = ["id_cliente","recência","frequência","valor monetário","segmentação"]
             
-            fig = plot_segmentation.plot_boxplot(df_rfm)
+            fig = plot_segmentation.plot_boxplot(df_rfm_to_save)
             st.plotly_chart(fig, use_container_width=True)
 
-            df_to_describe = transformation_functions.get_df_to_describe(df_rfm).T
+            df_to_describe = transformation_functions.get_df_to_describe(df_rfm_to_save).T
             btn_stats = st.download_button(
                 label="Salvar as estatísticas descritivas como CSV",
                 data=df_to_describe.to_csv().encode('utf-8'),
@@ -206,7 +243,7 @@ if(uploaded_file):
 
             btn_rfm = st.download_button(
                 label="Salvar as informações de RFM como CSV",
-                data=df_rfm.to_csv(index=False).encode('utf-8'),
+                data=df_rfm_to_save.to_csv(index=False).encode('utf-8'),
                 file_name="segmentacao_de_clientes.csv",
                 mime="text/csv",
             )
