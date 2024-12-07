@@ -12,11 +12,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.session_state.clear()
-
 st.title('Segmentação de Clientes')
 
-df_model = pd.read_csv("./data/model.csv")
+try:
+    df_model = pd.read_csv("data/model.csv")
+except:
+    df_model = pd.read_csv(r"https://raw.githubusercontent.com/anaflavialo/mba_usp_customer_segmentation/refs/heads/main/streamlit/data/model.csv")
 
 st.download_button(
     label="Baixar modelo",
@@ -32,8 +33,7 @@ uploaded_file = st.file_uploader(
     help="Veja o arquivo de exemplo disponível."
 )
 
-if(uploaded_file and "file" not in st.session_state):
-    st.session_state.file = uploaded_file
+if(uploaded_file):
 
     file_type = uploaded_file.type
     if(file_type == "text/csv"): df = pd.read_csv(uploaded_file)
@@ -51,6 +51,8 @@ if(uploaded_file and "file" not in st.session_state):
             date_filter = st.date_input("Selecione uma data para visualizar os dados", (min_date,max_date), min_value=min_date, max_value=max_date)
             if(len(date_filter) == 2):
                 df = df[(df.order_purchase >= date_filter[0]) & (df.order_purchase <= date_filter[1])]
+                st.session_state.first_exec = True 
+                st.session_state.calc_n_clusters = True
 
         col = st.columns(3, gap="medium")
         total_sales = df["monetary"].sum()
@@ -113,9 +115,16 @@ if(uploaded_file and "file" not in st.session_state):
                 }
             )
 
+        
+
         if(customer_qty >= 10):
-            if("best_number" not in st.session_state):
-                st.session_state.best_number = True
+            if 'first_exec' not in st.session_state:
+                st.session_state['first_exec'] = True
+                st.session_state["calc_n_clusters"] = True
+
+            first_exec = st.session_state.first_exec
+
+            if(first_exec):
                 with st.status("Criando segmentação", expanded=True):
                     st.write("Calculando as métricas por cliente...")
                     df_rfm = rfm.get_rfm(df)
@@ -125,43 +134,56 @@ if(uploaded_file and "file" not in st.session_state):
 
                     
                     st.write("Calculando o número ótimo de segmentações...")
-                    
-                    if(customer_qty >= 25000):
-                        inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
-                        n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias) 
-                        alg = None                   
-                    
-                    else:
-                        algorithms = ["kmeans", "agg", "bisect_kmeans"]
-                        posicoes_final = pd.DataFrame()
+                    if(st.session_state.calc_n_clusters):
+                        if(customer_qty >= 25000):
+                            inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
+                            n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias)
+                            alg = "kmeans"
+                        
+                        else:
+                            algorithms = ["kmeans", "agg", "bisect_kmeans"]
+                            posicoes_final = pd.DataFrame()
 
-                        for alg in algorithms:
-                            scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
-                            ranking_alg = ranking.get_ranking(scores_alg)
-                            n_scores_alg = ranking.get_scores_from_n(ranking_alg)
-                            n_scores_alg["alg"] = alg
+                            for alg in algorithms:
+                                scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
+                                ranking_alg = ranking.get_ranking(scores_alg)
+                                n_scores_alg = ranking.get_scores_from_n(ranking_alg)
+                                n_scores_alg["alg"] = alg
 
-                            posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
+                                posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
 
-                        ranking_final = ranking.get_ranking(posicoes_final)
-                        n_clusters = ranking.get_best_n(ranking_final)
-                        alg = ranking.get_best_alg(ranking_final)
-
-                    st.session_state.n_clusters = n_clusters
-                    st.session_state.alg = alg
+                            ranking_final = ranking.get_ranking(posicoes_final)
+                            n_clusters = ranking.get_best_n(ranking_final)
+                            alg = ranking.get_best_alg(ranking_final)
 
 
-                    st.write("Segmentando seus clientes...")            
+                    st.write("Segmentando seus clientes...")
 
-            st.title("Visualização das segmentações")            
+                    st.session_state["n_clusters"] = n_clusters
+                    st.session_state["first_exec"] = False
+                    st.session_state["df_rfm"] = df_rfm
+                    st.session_state["alg"] = alg
+                    st.session_state["df_rfm_std"] = df_rfm_std
+                    st.session_state["all_columns"] = all_columns
+
             
-            n_clusters = st.session_state.n_clusters 
-            alg = st.session_state.alg 
+
+            st.title("Visualização das segmentações")
+            n_clusters = st.session_state.n_clusters
+            alg = st.session_state.alg
+            df_rfm = st.session_state.df_rfm
+            df_rfm_std = st.session_state.df_rfm_std
+            all_columns = st.session_state.all_columns
 
             col1, _ = st.columns(2)
             with col1:
                 current_n_clusters = st.number_input(label="Alterar número de segmentações", value=n_clusters, min_value=2, max_value=10, step=1)
-            st.write(f"Seus clientes foram divididos em {str(current_n_clusters)} segmentações.")
+                st.session_state.n_clusters = current_n_clusters
+                n_clusters = current_n_clusters
+                st.session_state.calc_n_clusters = False
+
+
+            st.write(f"Seus clientes foram divididos em {str(n_clusters)} segmentações.")
 
             if(customer_qty >= 25000):
                 labels = kmeans.apply_kmeans(df_rfm_std, current_n_clusters, all_columns).labels_
@@ -205,12 +227,13 @@ if(uploaded_file and "file" not in st.session_state):
 
             st.divider()
             st.title("Estatísticas descritivas de cada segmentação")
-            df_rfm.columns = ["id_cliente","recência","frequência","valor monetário","segmentação"]
+            df_rfm_to_save = df_rfm.copy()
+            df_rfm_to_save.columns = ["id_cliente","recência","frequência","valor monetário","segmentação"]
             
-            fig = plot_segmentation.plot_boxplot(df_rfm)
+            fig = plot_segmentation.plot_boxplot(df_rfm_to_save)
             st.plotly_chart(fig, use_container_width=True)
 
-            df_to_describe = transformation_functions.get_df_to_describe(df_rfm).T
+            df_to_describe = transformation_functions.get_df_to_describe(df_rfm_to_save).T
             btn_stats = st.download_button(
                 label="Salvar as estatísticas descritivas como CSV",
                 data=df_to_describe.to_csv().encode('utf-8'),
@@ -220,7 +243,7 @@ if(uploaded_file and "file" not in st.session_state):
 
             btn_rfm = st.download_button(
                 label="Salvar as informações de RFM como CSV",
-                data=df_rfm.to_csv(index=False).encode('utf-8'),
+                data=df_rfm_to_save.to_csv(index=False).encode('utf-8'),
                 file_name="segmentacao_de_clientes.csv",
                 mime="text/csv",
             )
