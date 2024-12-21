@@ -1,1 +1,3 @@
-# mba_usp_customer_segmentation
+# Segmentação de clientes
+
+Acesse o sistema em segmentacaodeclientes.streamlit.app
