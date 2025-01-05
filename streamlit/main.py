@@ -135,26 +135,26 @@ if(uploaded_file):
                     
                     st.write("Calculando o número ótimo de segmentações...")
                     if(st.session_state.calc_n_clusters):
-                        if(customer_qty >= 25000):
-                            inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
-                            n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias)
-                            alg = "kmeans"
+                        # if(customer_qty >= 25000):
+                        inertias, fit_time = elbow_method.get_inertias(df_rfm_std, all_columns)
+                        n_clusters, distances = elbow_method.get_optimal_number_of_clusters(inertias)
+                        alg = "kmeans"
                         
-                        else:
-                            algorithms = ["kmeans", "agg", "bisect_kmeans"]
-                            posicoes_final = pd.DataFrame()
+                        # else:
+                        #     algorithms = ["kmeans", "agg", "bisect_kmeans"]
+                        #     posicoes_final = pd.DataFrame()
 
-                            for alg in algorithms:
-                                scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
-                                ranking_alg = ranking.get_ranking(scores_alg)
-                                n_scores_alg = ranking.get_scores_from_n(ranking_alg)
-                                n_scores_alg["alg"] = alg
+                        #     for alg in algorithms:
+                        #         scores_alg = scores.get_scores_from_alg(df_rfm_std, alg)
+                        #         ranking_alg = ranking.get_ranking(scores_alg)
+                        #         n_scores_alg = ranking.get_scores_from_n(ranking_alg)
+                        #         n_scores_alg["alg"] = alg
 
-                                posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
+                        #         posicoes_final = pd.concat([posicoes_final, n_scores_alg])[['n', 'silhouette_score', 'ch_score', 'db_score', 'alg']]
 
-                            ranking_final = ranking.get_ranking(posicoes_final)
-                            n_clusters = ranking.get_best_n(ranking_final)
-                            alg = ranking.get_best_alg(ranking_final)
+                        #     ranking_final = ranking.get_ranking(posicoes_final)
+                        #     n_clusters = ranking.get_best_n(ranking_final)
+                        #     alg = ranking.get_best_alg(ranking_final)
 
 
                     st.write("Segmentando seus clientes...")
